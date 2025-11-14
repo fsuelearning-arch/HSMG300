@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guest Roles Drag and Drop Activity</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <style>
+        body {
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100%;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0 0 15px 0;
+            font-size: 2.2rem;
+            font-weight: 700;
+        }
+
+        .instructions {
+            background: #f8fafc;
+            padding: 25px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .instructions p {
+            margin: 0;
+            font-size: 1.1rem;
+            color: #475569;
+            line-height: 1.6;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .roles-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .role-card {
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .role-card h3 {
+            margin: 0 0 10px 0;
+            color: #1e293b;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .role-card p {
+            margin: 0;
+            color: #64748b;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .activity-area {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .cards-container {
+            background: #fafafa;
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px dashed #cbd5e1;
+        }
+
+        .cards-container h4 {
+            margin: 0 0 20px 0;
+            color: #374151;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .guest-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            cursor: grab;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .guest-card:hover {
+            border-color: #6366f1;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .guest-card.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+            cursor: grabbing;
+        }
+
+        .guest-card.correct {
+            border-color: #10b981;
+            background: #ecfdf5;
+        }
+
+        .guest-card.incorrect {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .drop-zones {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .drop-zone {
+            background: white;
+            border: 2px dashed #d1d5db;
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 120px;
+            transition: all 0.2s ease;
+        }
+
+        .drop-zone.drag-over {
+            border-color: #6366f1;
+            background: #f0f9ff;
+        }
+
+        .drop-zone h4 {
+            margin: 0 0 15px 0;
+            color: #1f2937;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .drop-zone.unpaid-consultant h4 {
+            color: #059669;
+        }
+
+        .drop-zone.marketer h4 {
+            color: #dc2626;
+        }
+
+        .drop-zone.atmosphere-shaper h4 {
+            color: #7c3aed;
+        }
+
+        .check-button {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin: 30px auto 0;
+            display: block;
+        }
+
+        .check-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .feedback {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            display: none;
+        }
+
+        .feedback.success {
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+
+        .feedback.partial {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #f59e0b;
+        }
+
+        .reset-button {
+            background: #6b7280;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            margin: 10px auto 0;
+            display: block;
+            transition: all 0.2s ease;
+        }
+
+        .reset-button:hover {
+            background: #4b5563;
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 768px) {
+            .activity-area {
+                grid-template-columns: 1fr;
+            }
+            
+            .roles-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            body {
+                padding: 10px;
+            }
+        }
+    </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
+ </head>
+ <body>
+  <div class="container">
+   <header class="header">
+    <h1 id="activity-title">Guest Roles in Co-Production</h1>
+   </header>
+   <div class="instructions">
+    <p id="instructions-text">Read each guest action card. Drag and drop each card into the role that best fits: Unpaid Consultant, Marketer, or Atmosphere Shaper. After sorting, check your answers.</p>
+   </div>
+   <div class="main-content">
+    <div class="roles-section">
+     <div class="role-card">
+      <h3>🔍 Unpaid Consultant</h3>
+      <p>Guests who give feedback, ideas, or suggestions that help improve the service.</p>
+     </div>
+     <div class="role-card">
+      <h3>📢 Marketer</h3>
+      <p>Guests who share their experiences with others and influence the brand's reputation.</p>
+     </div>
+     <div class="role-card">
+      <h3>🌟 Atmosphere Shaper</h3>
+      <p>Guests whose behavior affects the mood, energy, or tone of the environment.</p>
+     </div>
+    </div>
+    <div class="activity-area">
+     <div class="cards-container">
+      <h4>Guest Action Cards</h4>
+      <div id="guest-cards">
+       <div class="guest-card" data-id="1">
+        Completing a post-stay survey with detailed suggestions
+       </div>
+       <div class="guest-card" data-id="2">
+        Telling a manager that the signage is confusing or unclear
+       </div>
+       <div class="guest-card" data-id="3">
+        Pointing out that the mobile check-in process kept glitching
+       </div>
+       <div class="guest-card" data-id="4">
+        Posting a picture of a beautifully plated dish on Instagram
+       </div>
+       <div class="guest-card" data-id="5">
+        Recording a TikTok video praising the hotel's rooftop view
+       </div>
+       <div class="guest-card" data-id="6">
+        Writing a 5-star Google review about their spa experience
+       </div>
+       <div class="guest-card" data-id="7">
+        Laughing loudly with a group of friends in the lobby
+       </div>
+       <div class="guest-card" data-id="8">
+        Showing visible frustration in line and sighing repeatedly
+       </div>
+       <div class="guest-card" data-id="9">
+        Starting a friendly conversation with nearby guests at the pool
+       </div>
+      </div>
+     </div>
+     <div class="drop-zones">
+      <div class="drop-zone unpaid-consultant" data-role="unpaid-consultant">
+       <h4>🔍 Unpaid Consultant</h4>
+      </div>
+      <div class="drop-zone marketer" data-role="marketer">
+       <h4>📢 Marketer</h4>
+      </div>
+      <div class="drop-zone atmosphere-shaper" data-role="atmosphere-shaper">
+       <h4>🌟 Atmosphere Shaper</h4>
+      </div>
+     </div>
+    </div><button class="check-button" id="check-answers">Check Answers</button> <button class="reset-button" id="reset-activity" style="display: none;">Try Again</button>
+    <div class="feedback" id="feedback"></div>
+   </div>
+  </div>
+  <script>
+        // Configuration object for editable content
+        const defaultConfig = {
+            activity_title: "Guest Roles in Co-Production",
+            instructions_text: "Read each guest action card. Drag and drop each card into the role that best fits: Unpaid Consultant, Marketer, or Atmosphere Shaper. After sorting, check your answers.",
+            check_button_text: "Check Answers"
+        };
+
+        // Correct answers mapping
+        const correctAnswers = {
+            '1': 'unpaid-consultant',
+            '2': 'unpaid-consultant', 
+            '3': 'unpaid-consultant',
+            '4': 'marketer',
+            '5': 'marketer',
+            '6': 'marketer',
+            '7': 'atmosphere-shaper',
+            '8': 'atmosphere-shaper',
+            '9': 'atmosphere-shaper'
+        };
+
+        let draggedElement = null;
+        let hasChecked = false;
+
+        // Initialize drag and drop functionality
+        function initializeDragAndDrop() {
+            const cards = document.querySelectorAll('.guest-card');
+            const dropZones = document.querySelectorAll('.drop-zone');
+
+            cards.forEach(card => {
+                card.addEventListener('dragstart', handleDragStart);
+                card.addEventListener('dragend', handleDragEnd);
+                card.setAttribute('draggable', 'true');
+            });
+
+            dropZones.forEach(zone => {
+                zone.addEventListener('dragover', handleDragOver);
+                zone.addEventListener('drop', handleDrop);
+                zone.addEventListener('dragenter', handleDragEnter);
+                zone.addEventListener('dragleave', handleDragLeave);
+            });
+        }
+
+        function handleDragStart(e) {
+            draggedElement = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            draggedElement = null;
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDragEnter(e) {
+            e.preventDefault();
+            this.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            if (!this.contains(e.relatedTarget)) {
+                this.classList.remove('drag-over');
+            }
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+            
+            if (draggedElement && this.classList.contains('drop-zone')) {
+                // Clear any previous feedback styling
+                draggedElement.classList.remove('correct', 'incorrect');
+                
+                // Move the card to the drop zone
+                this.appendChild(draggedElement);
+                
+                // Reset check state when cards are moved
+                if (hasChecked) {
+                    resetFeedback();
+                }
+            }
+        }
+
+        function checkAnswers() {
+            const dropZones = document.querySelectorAll('.drop-zone');
+            let correctCount = 0;
+            let totalCards = 0;
+
+            dropZones.forEach(zone => {
+                const cards = zone.querySelectorAll('.guest-card');
+                const zoneRole = zone.dataset.role;
+
+                cards.forEach(card => {
+                    totalCards++;
+                    const cardId = card.dataset.id;
+                    const correctRole = correctAnswers[cardId];
+
+                    if (zoneRole === correctRole) {
+                        card.classList.add('correct');
+                        card.classList.remove('incorrect');
+                        correctCount++;
+                    } else {
+                        card.classList.add('incorrect');
+                        card.classList.remove('correct');
+                    }
+                });
+            });
+
+            // Show feedback
+            const feedback = document.getElementById('feedback');
+            const resetButton = document.getElementById('reset-activity');
+            
+            if (correctCount === totalCards && totalCards === 9) {
+                feedback.textContent = `Perfect! You got all ${correctCount} out of ${totalCards} correct! 🎉`;
+                feedback.className = 'feedback success';
+            } else {
+                feedback.textContent = `You got ${correctCount} out of ${totalCards} correct. Review the incorrect placements and try again.`;
+                feedback.className = 'feedback partial';
+            }
+            
+            feedback.style.display = 'block';
+            resetButton.style.display = 'block';
+            hasChecked = true;
+        }
+
+        function resetActivity() {
+            // Move all cards back to the original container
+            const cardsContainer = document.getElementById('guest-cards');
+            const allCards = document.querySelectorAll('.guest-card');
+            
+            allCards.forEach(card => {
+                card.classList.remove('correct', 'incorrect');
+                cardsContainer.appendChild(card);
+            });
+
+            resetFeedback();
+        }
+
+        function resetFeedback() {
+            const feedback = document.getElementById('feedback');
+            const resetButton = document.getElementById('reset-activity');
+            
+            feedback.style.display = 'none';
+            resetButton.style.display = 'none';
+            hasChecked = false;
+        }
+
+        // Element SDK implementation
+        async function onConfigChange(config) {
+            const titleElement = document.getElementById('activity-title');
+            const instructionsElement = document.getElementById('instructions-text');
+            const checkButtonElement = document.getElementById('check-answers');
+
+            if (titleElement) {
+                titleElement.textContent = config.activity_title || defaultConfig.activity_title;
+            }
+            if (instructionsElement) {
+                instructionsElement.textContent = config.instructions_text || defaultConfig.instructions_text;
+            }
+            if (checkButtonElement) {
+                checkButtonElement.textContent = config.check_button_text || defaultConfig.check_button_text;
+            }
+        }
+
+        function mapToCapabilities(config) {
+            return {
+                recolorables: [],
+                borderables: [],
+                fontEditable: undefined,
+                fontSizeable: undefined
+            };
+        }
+
+        function mapToEditPanelValues(config) {
+            return new Map([
+                ["activity_title", config.activity_title || defaultConfig.activity_title],
+                ["instructions_text", config.instructions_text || defaultConfig.instructions_text],
+                ["check_button_text", config.check_button_text || defaultConfig.check_button_text]
+            ]);
+        }
+
+        // Initialize everything when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDragAndDrop();
+            
+            document.getElementById('check-answers').addEventListener('click', checkAnswers);
+            document.getElementById('reset-activity').addEventListener('click', resetActivity);
+
+            // Initialize Element SDK
+            if (window.elementSdk) {
+                window.elementSdk.init({
+                    defaultConfig,
+                    onConfigChange,
+                    mapToCapabilities,
+                    mapToEditPanelValues
+                });
+            }
+        });
+    </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'99e8eaefa01710ed',t:'MTc2MzE0ODU2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
