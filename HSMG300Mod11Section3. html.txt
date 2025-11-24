@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Breakdown Sorting Activity</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100%;
+      width: 100%;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    .activity-container {
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    .header {
+      background: white;
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .activity-title {
+      font-size: 32px;
+      font-weight: 700;
+      color: #1a202c;
+      margin: 0 0 16px 0;
+    }
+
+    .instructions {
+      font-size: 16px;
+      color: #4a5568;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .content-wrapper {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .cards-section {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .cards-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1a202c;
+      margin: 0 0 16px 0;
+    }
+
+    .cards-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 400px;
+    }
+
+    .card {
+      background: #f7fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 16px;
+      cursor: grab;
+      transition: all 0.2s;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #2d3748;
+    }
+
+    .card:hover {
+      border-color: #667eea;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+    }
+
+    .card.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+    }
+
+    .card.correct {
+      background: #f0fdf4;
+      border-color: #22c55e;
+    }
+
+    .card.incorrect {
+      background: #fef2f2;
+      border-color: #ef4444;
+    }
+
+    .categories-section {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .category {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .category-header {
+      margin-bottom: 12px;
+    }
+
+    .category-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1a202c;
+      margin: 0 0 8px 0;
+    }
+
+    .category-definition {
+      font-size: 14px;
+      color: #64748b;
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .drop-zone {
+      min-height: 180px;
+      background: #f8fafc;
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: all 0.2s;
+    }
+
+    .drop-zone.drag-over {
+      background: #eff6ff;
+      border-color: #667eea;
+    }
+
+    .drop-zone.empty {
+      justify-content: center;
+      align-items: center;
+    }
+
+    .drop-zone-placeholder {
+      color: #94a3b8;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: 14px 32px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+    }
+
+    .btn-secondary:hover {
+      background: #f7fafc;
+      transform: translateY(-2px);
+    }
+
+    .feedback {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      display: none;
+    }
+
+    .feedback.show {
+      display: block;
+    }
+
+    .feedback-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0 0 12px 0;
+    }
+
+    .feedback-message {
+      font-size: 16px;
+      color: #4a5568;
+      margin: 0;
+    }
+
+    @media (max-width: 1024px) {
+      .content-wrapper {
+        grid-template-columns: 1fr;
+      }
+
+      .cards-section {
+        order: 2;
+      }
+
+      .categories-section {
+        order: 1;
+      }
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
+ </head>
+ <body>
+  <div class="activity-container">
+   <div class="header">
+    <h1 class="activity-title" id="activityTitle">Service Breakdown Sorting Activity</h1>
+    <p class="instructions" id="instructions">Read each service breakdown card. Drag and drop each card into the category that best fits: Efficiency Breakdown, Empowerment Breakdown, or Role Clarity Breakdown. Then click Check Answers to see your results.</p>
+   </div>
+   <div class="content-wrapper">
+    <div class="cards-section">
+     <h2 class="cards-title">Service Breakdown Scenarios</h2>
+     <div class="cards-container" id="cardsContainer"><!-- Cards will be populated here -->
+     </div>
+    </div>
+    <div class="categories-section">
+     <div class="category">
+      <div class="category-header">
+       <h3 class="category-title" id="category1Title">Efficiency Breakdown</h3>
+       <p class="category-definition">The service process is slow, confusing, or full of unnecessary steps.</p>
+      </div>
+      <div class="drop-zone" data-category="efficiency" id="efficiencyZone"><span class="drop-zone-placeholder">Drop cards here</span>
+      </div>
+     </div>
+     <div class="category">
+      <div class="category-header">
+       <h3 class="category-title" id="category2Title">Empowerment Breakdown</h3>
+       <p class="category-definition">Guests have limited choices, can't personalize their experience, or can't participate meaningfully.</p>
+      </div>
+      <div class="drop-zone" data-category="empowerment" id="empowermentZone"><span class="drop-zone-placeholder">Drop cards here</span>
+      </div>
+     </div>
+     <div class="category">
+      <div class="category-header">
+       <h3 class="category-title" id="category3Title">Role Clarity Breakdown</h3>
+       <p class="category-definition">Guests don't know what they're supposed to do, how the system works, or what their role is.</p>
+      </div>
+      <div class="drop-zone" data-category="role-clarity" id="roleClarityZone"><span class="drop-zone-placeholder">Drop cards here</span>
+      </div>
+     </div>
+    </div>
+   </div>
+   <div class="feedback" id="feedback">
+    <h2 class="feedback-title" id="feedbackTitle"></h2>
+    <p class="feedback-message" id="feedbackMessage"></p>
+   </div>
+   <div class="actions"><button class="btn btn-primary" id="checkBtn">Check Answers</button> <button class="btn btn-secondary" id="resetBtn">Reset</button>
+   </div>
+  </div>
+  <script>
+    const defaultConfig = {
+      activity_title: "Service Breakdown Sorting Activity",
+      instructions: "Read each service breakdown card. Drag and drop each card into the category that best fits: Efficiency Breakdown, Empowerment Breakdown, or Role Clarity Breakdown. Then click Check Answers to see your results.",
+      category_1_title: "Efficiency Breakdown",
+      category_2_title: "Empowerment Breakdown",
+      category_3_title: "Role Clarity Breakdown",
+      check_button_text: "Check Answers",
+      reset_button_text: "Reset",
+      background_color: "#667eea",
+      surface_color: "#ffffff",
+      text_color: "#1a202c",
+      primary_action_color: "#667eea",
+      secondary_action_color: "#64748b",
+      font_family: "Inter",
+      font_size: 16
+    };
+
+    const cards = [
+      { id: 1, text: "Guests wait in two different lines because the check-in process isn't obvious.", correct: "role-clarity" },
+      { id: 2, text: "The self-service kiosk has too many screens and slows guests down.", correct: "efficiency" },
+      { id: 3, text: "Guests aren't sure whether they should seat themselves or wait for a host.", correct: "role-clarity" },
+      { id: 4, text: "The mobile ordering app doesn't allow simple customization options.", correct: "empowerment" },
+      { id: 5, text: "A QR code for digital ordering is broken, forcing guests to flag down staff.", correct: "efficiency" },
+      { id: 6, text: "The buffet layout is unclear, and guests keep walking the wrong direction.", correct: "efficiency" },
+      { id: 7, text: "Hotel room preferences can't be chosen in advance through the app.", correct: "empowerment" },
+      { id: 8, text: "Directions for using in-room tech are confusing or incomplete.", correct: "role-clarity" },
+      { id: 9, text: "Guests don't know whether they should clear their own dishes at a casual cafe.", correct: "role-clarity" }
+    ];
+
+    let draggedCard = null;
+    let hasChecked = false;
+
+    function initializeCards() {
+      const container = document.getElementById('cardsContainer');
+      container.innerHTML = '';
+      
+      cards.forEach(card => {
+        const cardEl = document.createElement('div');
+        cardEl.className = 'card';
+        cardEl.draggable = true;
+        cardEl.dataset.id = card.id;
+        cardEl.dataset.correct = card.correct;
+        cardEl.textContent = card.text;
+        
+        cardEl.addEventListener('dragstart', handleDragStart);
+        cardEl.addEventListener('dragend', handleDragEnd);
+        
+        container.appendChild(cardEl);
+      });
+    }
+
+    function handleDragStart(e) {
+      draggedCard = e.target;
+      e.target.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    }
+
+    function handleDragEnd(e) {
+      e.target.classList.remove('dragging');
+    }
+
+    function setupDropZones() {
+      const dropZones = document.querySelectorAll('.drop-zone');
+      
+      dropZones.forEach(zone => {
+        zone.addEventListener('dragover', handleDragOver);
+        zone.addEventListener('drop', handleDrop);
+        zone.addEventListener('dragleave', handleDragLeave);
+      });
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      e.currentTarget.classList.add('drag-over');
+    }
+
+    function handleDragLeave(e) {
+      if (e.target.classList.contains('drop-zone')) {
+        e.target.classList.remove('drag-over');
+      }
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('drag-over');
+      
+      if (draggedCard) {
+        const placeholder = e.currentTarget.querySelector('.drop-zone-placeholder');
+        if (placeholder) {
+          placeholder.remove();
+        }
+        
+        e.currentTarget.classList.remove('empty');
+        e.currentTarget.appendChild(draggedCard);
+        draggedCard = null;
+        
+        if (hasChecked) {
+          hasChecked = false;
+          clearFeedback();
+        }
+      }
+    }
+
+    function checkAnswers() {
+      hasChecked = true;
+      let correct = 0;
+      let total = cards.length;
+      
+      const allCards = document.querySelectorAll('.card');
+      allCards.forEach(card => {
+        const cardCorrectCategory = card.dataset.correct;
+        const currentZone = card.closest('.drop-zone');
+        
+        card.classList.remove('correct', 'incorrect');
+        
+        if (currentZone) {
+          const currentCategory = currentZone.dataset.category;
+          if (currentCategory === cardCorrectCategory) {
+            card.classList.add('correct');
+            correct++;
+          } else {
+            card.classList.add('incorrect');
+          }
+        } else {
+          card.classList.add('incorrect');
+        }
+      });
+      
+      showFeedback(correct, total);
+    }
+
+    function showFeedback(correct, total) {
+      const feedback = document.getElementById('feedback');
+      const title = document.getElementById('feedbackTitle');
+      const message = document.getElementById('feedbackMessage');
+      
+      const percentage = (correct / total) * 100;
+      
+      if (percentage === 100) {
+        title.textContent = '🎉 Perfect Score!';
+        title.style.color = '#22c55e';
+        message.textContent = `You correctly sorted all ${total} scenarios! Excellent understanding of service breakdown categories.`;
+      } else if (percentage >= 70) {
+        title.textContent = '👍 Great Job!';
+        title.style.color = '#667eea';
+        message.textContent = `You got ${correct} out of ${total} correct. Review the incorrect cards and try again.`;
+      } else {
+        title.textContent = '📚 Keep Learning';
+        title.style.color = '#f59e0b';
+        message.textContent = `You got ${correct} out of ${total} correct. Review the category definitions and try sorting again.`;
+      }
+      
+      feedback.classList.add('show');
+    }
+
+    function clearFeedback() {
+      const feedback = document.getElementById('feedback');
+      feedback.classList.remove('show');
+      
+      const allCards = document.querySelectorAll('.card');
+      allCards.forEach(card => {
+        card.classList.remove('correct', 'incorrect');
+      });
+    }
+
+    function resetActivity() {
+      hasChecked = false;
+      clearFeedback();
+      
+      const allCards = document.querySelectorAll('.card');
+      allCards.forEach(card => card.remove());
+      
+      const dropZones = document.querySelectorAll('.drop-zone');
+      dropZones.forEach(zone => {
+        zone.innerHTML = '<span class="drop-zone-placeholder">Drop cards here</span>';
+        zone.classList.add('empty');
+      });
+      
+      initializeCards();
+    }
+
+    document.getElementById('checkBtn').addEventListener('click', checkAnswers);
+    document.getElementById('resetBtn').addEventListener('click', resetActivity);
+
+    async function onConfigChange(config) {
+      const baseSize = config.font_size || defaultConfig.font_size;
+      const customFont = config.font_family || defaultConfig.font_family;
+      const baseFontStack = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+      
+      document.body.style.background = `linear-gradient(135deg, ${config.background_color || defaultConfig.background_color} 0%, ${config.primary_action_color || defaultConfig.primary_action_color} 100%)`;
+      
+      document.getElementById('activityTitle').textContent = config.activity_title || defaultConfig.activity_title;
+      document.getElementById('activityTitle').style.fontFamily = `${customFont}, ${baseFontStack}`;
+      document.getElementById('activityTitle').style.fontSize = `${baseSize * 2}px`;
+      document.getElementById('activityTitle').style.color = config.text_color || defaultConfig.text_color;
+      
+      document.getElementById('instructions').textContent = config.instructions || defaultConfig.instructions;
+      document.getElementById('instructions').style.fontFamily = `${customFont}, ${baseFontStack}`;
+      document.getElementById('instructions').style.fontSize = `${baseSize}px`;
+      
+      document.getElementById('category1Title').textContent = config.category_1_title || defaultConfig.category_1_title;
+      document.getElementById('category1Title').style.fontFamily = `${customFont}, ${baseFontStack}`;
+      document.getElementById('category1Title').style.fontSize = `${baseSize * 1.25}px`;
+      document.getElementById('category1Title').style.color = config.text_color || defaultConfig.text_color;
+      
+      document.getElementById('category2Title').textContent = config.category_2_title || defaultConfig.category_2_title;
+      document.getElementById('category2Title').style.fontFamily = `${customFont}, ${baseFontStack}`;
+      document.getElementById('category2Title').style.fontSize = `${baseSize * 1.25}px`;
+      document.getElementById('category2Title').style.color = config.text_color || defaultConfig.text_color;
+      
+      document.getElementById('category3Title').textContent = config.category_3_title || defaultConfig.category_3_title;
+      document.getElementById('category3Title').style.fontFamily = `${customFont}, ${baseFontStack}`;
+      document.getElementById('category3Title').style.fontSize = `${baseSize * 1.25}px`;
+      document.getElementById('category3Title').style.color = config.text_color || defaultConfig.text_color;
+      
+      document.getElementById('checkBtn').textContent = config.check_button_text || defaultConfig.check_button_text;
+      document.getElementById('checkBtn').style.fontFamily = `${customFont}, ${baseFontStack}`;
+      document.getElementById('checkBtn').style.fontSize = `${baseSize}px`;
+      document.getElementById('checkBtn').style.background = config.primary_action_color || defaultConfig.primary_action_color;
+      
+      document.getElementById('resetBtn').textContent = config.reset_button_text || defaultConfig.reset_button_text;
+      document.getElementById('resetBtn').style.fontFamily = `${customFont}, ${baseFontStack}`;
+      document.getElementById('resetBtn').style.fontSize = `${baseSize}px`;
+      document.getElementById('resetBtn').style.color = config.primary_action_color || defaultConfig.primary_action_color;
+      document.getElementById('resetBtn').style.borderColor = config.primary_action_color || defaultConfig.primary_action_color;
+      
+      const headers = document.querySelectorAll('.header, .category, .cards-section, .feedback');
+      headers.forEach(el => {
+        el.style.background = config.surface_color || defaultConfig.surface_color;
+      });
+      
+      const allText = document.querySelectorAll('.cards-title, .category-definition, .feedback-message');
+      allText.forEach(el => {
+        el.style.fontFamily = `${customFont}, ${baseFontStack}`;
+        el.style.fontSize = `${baseSize * 0.875}px`;
+      });
+    }
+
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities: (config) => ({
+          recolorables: [
+            {
+              get: () => config.background_color || defaultConfig.background_color,
+              set: (value) => {
+                config.background_color = value;
+                window.elementSdk.setConfig({ background_color: value });
+              }
+            },
+            {
+              get: () => config.surface_color || defaultConfig.surface_color,
+              set: (value) => {
+                config.surface_color = value;
+                window.elementSdk.setConfig({ surface_color: value });
+              }
+            },
+            {
+              get: () => config.text_color || defaultConfig.text_color,
+              set: (value) => {
+                config.text_color = value;
+                window.elementSdk.setConfig({ text_color: value });
+              }
+            },
+            {
+              get: () => config.primary_action_color || defaultConfig.primary_action_color,
+              set: (value) => {
+                config.primary_action_color = value;
+                window.elementSdk.setConfig({ primary_action_color: value });
+              }
+            }
+          ],
+          borderables: [],
+          fontEditable: {
+            get: () => config.font_family || defaultConfig.font_family,
+            set: (value) => {
+              config.font_family = value;
+              window.elementSdk.setConfig({ font_family: value });
+            }
+          },
+          fontSizeable: {
+            get: () => config.font_size || defaultConfig.font_size,
+            set: (value) => {
+              config.font_size = value;
+              window.elementSdk.setConfig({ font_size: value });
+            }
+          }
+        }),
+        mapToEditPanelValues: (config) => new Map([
+          ["activity_title", config.activity_title || defaultConfig.activity_title],
+          ["instructions", config.instructions || defaultConfig.instructions],
+          ["category_1_title", config.category_1_title || defaultConfig.category_1_title],
+          ["category_2_title", config.category_2_title || defaultConfig.category_2_title],
+          ["category_3_title", config.category_3_title || defaultConfig.category_3_title],
+          ["check_button_text", config.check_button_text || defaultConfig.check_button_text],
+          ["reset_button_text", config.reset_button_text || defaultConfig.reset_button_text]
+        ])
+      });
+    }
+
+    initializeCards();
+    setupDropZones();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a3a433945cdeb64',t:'MTc2NDAwMTUyOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
